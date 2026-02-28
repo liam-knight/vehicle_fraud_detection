@@ -1,0 +1,116 @@
+---
+title: "Vehicle Fraud Detection"
+author: "Liam Knight"
+format:
+  html:
+    toc: true
+    number-sections: true
+---
+
+# Descriptive analysis of dataset
+
+```{r, include = FALSE}
+
+# load packages
+packages <- c('tidyverse', 'knitr')
+lapply(packages, library, character.only=TRUE)
+
+# read in data
+df <- read.csv("data/fraud_oracle.csv", 
+                header = TRUE,
+                stringsAsFactors = TRUE,
+                check.names = FALSE) 
+```
+
+```{r} 
+# initial check for missing values
+sum(sapply(df, function(x) sum(is.na(x))))
+```
+
+## Cleaning and inspection
+
+Though there are no missing values in this dataset, there are a few errors and inconsistencies we need to fix: some misspellings/typos, inconsistency in variable naming conventions, a meaningless variable `PolicyNumber`, and two variables `PoliceReportFiled` and `WitnessPresent` that are coded as character strings, but should function as Boolean types.
+
+```{r}
+# clean up data
+df <- df |>
+  # fix typos and standardize variable name conventions
+  mutate(Make = recode(Make, 
+                       "Accura" = "Acura",
+                       "Mecedes" = "Mercedes",
+                       "Nisson" = "Nissan",
+                       "Porche" = "Porsche")) |>
+  rename(NumberOfSupplements = NumberOfSuppliments,
+         AddressChangeClaim = AddressChange_Claim,
+         DaysPolicyClaim = Days_Policy_Claim,
+         DaysPolicyAccident = Days_Policy_Accident,
+         FraudFoundP = FraudFound_P) |>
+  # PolicyNumber doesn't add any meaningful information, remove it
+  select(!PolicyNumber) |>
+  # PoliceReportFiled and WitnessPresent are really Booleans
+  mutate(PoliceReportFiled = as.logical(recode(PoliceReportFiled, 
+                                               'No' = 0, 'Yes' = 1)),
+        WitnessPresent = as.logical(recode(WitnessPresent, 
+                                           'No' = 0, 'Yes' = 1))) 
+```
+
+Now we inspect a few relevant features of the dataset.
+
+```{r}
+# function to get descriptive info about each variable
+variable_info <- function(df) {
+  n_rows <- nrow(df)
+  tab <- tibble(
+    variable = names(df),
+    class = map_chr(df, ~ class(.x)),
+    n_unique = map_int(df, ~ n_distinct(.x)),
+    # run a custom function on each column to get character vector of 
+    # values for each column that appear in descending order of counts
+    values_descending = map_chr(df, ~ {
+      tab <- sort(table(as.character(.x)), decreasing = TRUE)
+      if (length(tab) == 0) return(NA_character_)
+      paste0(names(tab), collapse = ", ")
+    })
+  )
+  return(tab)
+}
+
+kable(variable_info(df))
+
+```
+## Odd values
+
+Though we had already confirmed there are no missing values in this dataset, a few columns have some unexpected values of 0: `DayOfWeekClaimed`, `MonthClaimed`, `Age`. Note that as the variable `Age` refers to the age of the policyholder, 0 does not make sense as a value for any of these variables.
+
+```{r}
+# table that indicates how many times a value of 0 or "0" appears in each column
+tab_zeroes <- df |>
+  select(all_of(c("DayOfWeekClaimed", "MonthClaimed", "Age"))) |>
+  summarise(across(everything(), ~ sum(as.character(.) == "0"))) |>
+  pivot_longer(everything(), names_to = "variable", values_to = "count")
+
+kable(tab_zeroes)
+
+```
+Most of the values of 0 are in the `Age` column. When considering how to treat these values that are effectively missing values, unfortunately we are not able to speak to the data owner or source to understand where these values might have come from, which could help inform the decision about how to handle them. Additionally, there is no obvious reasonable method of imputation here. Thus, since 320 values comprise only 2.08% of the entire dataset of 15420 values and therefore a very small proportion, we will drop the rows that have these values of 0.
+
+```{r}
+df <- df |>
+  filter(!if_any(all_of(c("DayOfWeekClaimed", "MonthClaimed", "Age")), 
+                 ~ coalesce(as.character(.) == "0")))
+```
+
+Now we can perform some exploratory data analysis.
+
+# Exploratory Data Analysis (EDA)
+
+```{r}
+# 
+
+
+
+
+```
+
+
+

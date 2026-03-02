@@ -1,10 +1,11 @@
 # Vehicle Detection Fraud
 
-Personal project analyzing data on vehicle insurance claim fraud.
+Personal project analyzing data on vehicle insurance claim fraud: <a href="https://liam-knight.github.io/vehicle_fraud_detection/">Project published here</a>
 
 ## Data:
 
--   `fraud_oracle.csv` dataset from: <https://www.kaggle.com/datasets/shivamb/vehicle-claim-fraud-detection?resource=download>, originally from Oracle Database.
+-   `fraud_oracle.csv` dataset from: 
+<a href="https://www.kaggle.com/datasets/shivamb/vehicle-claim-fraud-detection?resource=download">Kaggle vehicle claim fraud detection dataset</a>, originally from Oracle Database.
 
 ## Definition of Variables
 

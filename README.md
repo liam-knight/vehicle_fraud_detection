@@ -33,7 +33,7 @@ Personal project analyzing data on vehicle insurance claim fraud: <a href="https
 -   **Days_Policy_Claim (changed name to DaysPolicyClaim)**: The number of days since the policy was issued until the claim was made.
 -   **PastNumberOfClaims**: The number of claims previously made by the policyholder.
 -   **AgeOfVehicle**: The age of the vehicle involved in the claim.
--   **AgeOfPolicyHolder**: The age of the policyholder.
+-   **AgeOfPolicyHolder**: The age group of the policyholder.
 -   **PoliceReportFiled**: Indicates whether a police report was filed for the accident.
 -   **WitnessPresent**: Indicates whether a witness was present at the scene of the accident.
 -   **AgentType**: The type of insurance agent handling the policy (e.g., internal, external)

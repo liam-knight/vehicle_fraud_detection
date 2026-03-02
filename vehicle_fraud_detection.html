@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.25">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Liam Knight">
+
+<title>Vehicle Fraud Detection</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="vehicle_fraud_detection_files/libs/clipboard/clipboard.min.js"></script>
+<script src="vehicle_fraud_detection_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="vehicle_fraud_detection_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="vehicle_fraud_detection_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="vehicle_fraud_detection_files/libs/quarto-html/popper.min.js"></script>
+<script src="vehicle_fraud_detection_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="vehicle_fraud_detection_files/libs/quarto-html/anchor.min.js"></script>
+<link href="vehicle_fraud_detection_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="vehicle_fraud_detection_files/libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="vehicle_fraud_detection_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="vehicle_fraud_detection_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="vehicle_fraud_detection_files/libs/bootstrap/bootstrap-d6a003b94517c951b2d65075d42fb01b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#descriptive-analysis-of-dataset" id="toc-descriptive-analysis-of-dataset" class="nav-link active" data-scroll-target="#descriptive-analysis-of-dataset"><span class="header-section-number">1</span> Descriptive analysis of dataset</a>
+  <ul class="collapse">
+  <li><a href="#data-collection" id="toc-data-collection" class="nav-link" data-scroll-target="#data-collection"><span class="header-section-number">1.1</span> Data collection</a></li>
+  <li><a href="#data-preprocessing" id="toc-data-preprocessing" class="nav-link" data-scroll-target="#data-preprocessing"><span class="header-section-number">1.2</span> Data preprocessing</a></li>
+  </ul></li>
+  <li><a href="#exploratory-data-analysis-eda" id="toc-exploratory-data-analysis-eda" class="nav-link" data-scroll-target="#exploratory-data-analysis-eda"><span class="header-section-number">2</span> Exploratory Data Analysis (EDA)</a>
+  <ul class="collapse">
+  <li><a href="#year-age-and-sex" id="toc-year-age-and-sex" class="nav-link" data-scroll-target="#year-age-and-sex"><span class="header-section-number">2.1</span> Year, age, and sex</a></li>
+  <li><a href="#conditional-on-age" id="toc-conditional-on-age" class="nav-link" data-scroll-target="#conditional-on-age"><span class="header-section-number">2.2</span> Conditional on age</a></li>
+  <li><a href="#proportions-of-fraud-by-car-make" id="toc-proportions-of-fraud-by-car-make" class="nav-link" data-scroll-target="#proportions-of-fraud-by-car-make"><span class="header-section-number">2.3</span> Proportions of fraud by car make</a></li>
+  </ul></li>
+  <li><a href="#logistic-regression" id="toc-logistic-regression" class="nav-link" data-scroll-target="#logistic-regression"><span class="header-section-number">3</span> Logistic regression</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Vehicle Fraud Detection</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Liam Knight </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="descriptive-analysis-of-dataset" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Descriptive analysis of dataset</h1>
+<section id="data-collection" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="data-collection"><span class="header-section-number">1.1</span> Data collection</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># read in data: fraud_oracle.csv from Kaggle, see README.md</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"data/fraud_oracle.csv"</span>, </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>                <span class="at">header =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">stringsAsFactors =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                <span class="at">check.names =</span> <span class="cn">FALSE</span>) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="data-preprocessing" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="data-preprocessing"><span class="header-section-number">1.2</span> Data preprocessing</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># initial check for missing values: none found</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(<span class="fu">sapply</span>(df, <span class="cf">function</span>(x) <span class="fu">sum</span>(<span class="fu">is.na</span>(x))))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Though there are no missing values in this dataset, an initial visual review revealed a few errors and inconsistencies to fix: some misspellings/typos, inconsistency in variable naming conventions, and a meaningless variable <code>PolicyNumber</code>.</p>
+<p><strong>Data cleaning:</strong></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># clean up data</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># fix typos and standardize variable name conventions</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Make =</span> <span class="fu">recode</span>(Make, </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>                       <span class="st">"Accura"</span> <span class="ot">=</span> <span class="st">"Acura"</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>                       <span class="st">"Mecedes"</span> <span class="ot">=</span> <span class="st">"Mercedes"</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>                       <span class="st">"Nisson"</span> <span class="ot">=</span> <span class="st">"Nissan"</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>                       <span class="st">"Porche"</span> <span class="ot">=</span> <span class="st">"Porsche"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">NumberOfSupplements =</span> NumberOfSuppliments,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">AddressChangeClaim =</span> AddressChange_Claim,</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">DaysPolicyClaim =</span> Days_Policy_Claim,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">DaysPolicyAccident =</span> Days_Policy_Accident,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>         <span class="at">FraudFoundP =</span> FraudFound_P) <span class="sc">|&gt;</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># PolicyNumber doesn't add any meaningful information, remove it</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">!</span>PolicyNumber) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><strong>Data inspection:</strong></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># function to get descriptive info about each variable</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>variable_info <span class="ot">&lt;-</span> <span class="cf">function</span>(df) {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  n_rows <span class="ot">&lt;-</span> <span class="fu">nrow</span>(df)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  tab <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">variable =</span> <span class="fu">names</span>(df),</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">class =</span> <span class="fu">map_chr</span>(df, <span class="sc">~</span> <span class="fu">class</span>(.x)),</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_unique =</span> <span class="fu">map_int</span>(df, <span class="sc">~</span> <span class="fu">n_distinct</span>(.x)),</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># run a custom function on each column to get character vector of </span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># values for each column that appear in descending order of counts</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_descending =</span> <span class="fu">map_chr</span>(df, <span class="sc">~</span> {</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>      tab <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">table</span>(<span class="fu">as.character</span>(.x)), <span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (<span class="fu">length</span>(tab) <span class="sc">==</span> <span class="dv">0</span>) <span class="fu">return</span>(<span class="cn">NA_character_</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>      <span class="fu">paste0</span>(<span class="fu">names</span>(tab), <span class="at">collapse =</span> <span class="st">", "</span>)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(tab)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">variable_info</span>(df))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 2%">
+<col style="width: 3%">
+<col style="width: 87%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">variable</th>
+<th style="text-align: left;">class</th>
+<th style="text-align: right;">n_unique</th>
+<th style="text-align: left;">values_descending</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Month</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: left;">Jan, May, Mar, Jun, Oct, Dec, Apr, Feb, Jul, Sep, Nov, Aug</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">WeekOfMonth</td>
+<td style="text-align: left;">integer</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: left;">3, 2, 4, 1, 5</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">DayOfWeek</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: left;">Monday, Friday, Tuesday, Thursday, Wednesday, Saturday, Sunday</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Make</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: left;">Pontiac, Toyota, Honda, Mazda, Chevrolet, Acura, Ford, VW, Dodge, Saab, Mercury, Saturn, Nissan, BMW, Jaguar, Porsche, Mercedes, Ferrari, Lexus</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">AccidentArea</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">Urban, Rural</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">DayOfWeekClaimed</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: left;">Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, 0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">MonthClaimed</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: left;">Jan, May, Mar, Oct, Jun, Feb, Nov, Apr, Sep, Jul, Dec, Aug, 0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">WeekOfMonthClaimed</td>
+<td style="text-align: left;">integer</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: left;">2, 3, 1, 4, 5</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Sex</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">Male, Female</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">MaritalStatus</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">Married, Single, Divorced, Widow</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Age</td>
+<td style="text-align: left;">integer</td>
+<td style="text-align: right;">66</td>
+<td style="text-align: left;">30, 33, 34, 35, 28, 29, 31, 32, 27, 26, 39, 41, 44, 37, 36, 43, 42, 45, 38, 40, 0, 47, 46, 48, 50, 54, 55, 51, 52, 49, 53, 60, 56, 64, 61, 57, 59, 63, 24, 65, 58, 21, 22, 23, 62, 25, 18, 72, 66, 76, 71, 74, 78, 75, 19, 68, 69, 73, 80, 67, 77, 20, 70, 79, 16, 17</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fault</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">Policy Holder, Third Party</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PolicyType</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: left;">Sedan - Collision, Sedan - Liability, Sedan - All Perils, Sport - Collision, Utility - All Perils, Utility - Collision, Sport - All Perils, Utility - Liability, Sport - Liability</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">VehicleCategory</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">Sedan, Sport, Utility</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">VehiclePrice</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: left;">20000 to 29000, 30000 to 39000, more than 69000, less than 20000, 40000 to 59000, 60000 to 69000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">FraudFoundP</td>
+<td style="text-align: left;">integer</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">0, 1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">RepNumber</td>
+<td style="text-align: left;">integer</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: left;">7, 9, 1, 5, 10, 12, 15, 16, 2, 3, 11, 6, 14, 8, 4, 13</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Deductible</td>
+<td style="text-align: left;">integer</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">400, 700, 500, 300</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">DriverRating</td>
+<td style="text-align: left;">integer</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">1, 3, 2, 4</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">DaysPolicyAccident</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: left;">more than 30, 8 to 15, none, 15 to 30, 1 to 7</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">DaysPolicyClaim</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">more than 30, 15 to 30, 8 to 15, none</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PastNumberOfClaims</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">2 to 4, none, 1, more than 4</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">AgeOfVehicle</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: left;">7 years, more than 7, 6 years, 5 years, new, 4 years, 3 years, 2 years</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">AgeOfPolicyHolder</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: left;">31 to 35, 36 to 40, 41 to 50, 51 to 65, 26 to 30, over 65, 16 to 17, 21 to 25, 18 to 20</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PoliceReportFiled</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">No, Yes</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">WitnessPresent</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">No, Yes</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">AgentType</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">External, Internal</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">NumberOfSupplements</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">none, more than 5, 1 to 2, 3 to 5</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">AddressChangeClaim</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: left;">no change, 4 to 8 years, 2 to 3 years, 1 year, under 6 months</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">NumberOfCars</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: left;">1 vehicle, 2 vehicles, 3 to 4, 5 to 8, more than 8</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Year</td>
+<td style="text-align: left;">integer</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">1994, 1995, 1996</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BasePolicy</td>
+<td style="text-align: left;">factor</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">Collision, Liability, All Perils</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p><strong>Dealing with odd values</strong></p>
+<p>Though we had already confirmed there are no missing values in this dataset, a few columns have some unexpected values of 0: <code>DayOfWeekClaimed</code>, <code>MonthClaimed</code>, <code>Age</code>. Note that as the variable <code>Age</code> refers to the age of the policyholder, 0 does not make sense as a value for any of these variables.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># table that indicates how many times a value of 0 or "0" appears in each column</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>tab_zeroes <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="fu">all_of</span>(<span class="fu">c</span>(<span class="st">"DayOfWeekClaimed"</span>, <span class="st">"MonthClaimed"</span>, <span class="st">"Age"</span>))) <span class="sc">|&gt;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="fu">everything</span>(), <span class="sc">~</span> <span class="fu">sum</span>(<span class="fu">as.character</span>(.) <span class="sc">==</span> <span class="st">"0"</span>))) <span class="sc">|&gt;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="fu">everything</span>(), <span class="at">names_to =</span> <span class="st">"variable"</span>, <span class="at">values_to =</span> <span class="st">"count"</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(tab_zeroes)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">variable</th>
+<th style="text-align: right;">count</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">DayOfWeekClaimed</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">MonthClaimed</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Age</td>
+<td style="text-align: right;">320</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Most of the values of 0 are in the <code>Age</code> column. When considering how to treat these values that are effectively missing values, unfortunately we are not able to speak to the data owner or source to understand where these values might have come from, which could help inform the decision about how to handle them. Additionally, there is no obvious reasonable method of imputation here. Thus, since 320 values comprise only 2.08% of the entire dataset of 15420 values and therefore a very small proportion, we will drop the rows that have these values of 0.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">if_any</span>(<span class="fu">all_of</span>(<span class="fu">c</span>(<span class="st">"DayOfWeekClaimed"</span>, <span class="st">"MonthClaimed"</span>, <span class="st">"Age"</span>)), </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                 <span class="sc">~</span> <span class="fu">coalesce</span>(<span class="fu">as.character</span>(.) <span class="sc">==</span> <span class="st">"0"</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Now we can perform some exploratory data analysis.</p>
+</section>
+</section>
+<section id="exploratory-data-analysis-eda" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Exploratory Data Analysis (EDA)</h1>
+<section id="year-age-and-sex" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="year-age-and-sex"><span class="header-section-number">2.1</span> Year, age, and sex</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># visualize distribution of sex and age for both cases of fraud and not fraud</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>df_year_sex_age <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">AgeGroup =</span> <span class="fu">cut</span>(Age, </span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                        <span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">20</span>, <span class="dv">30</span>, <span class="dv">40</span>, <span class="dv">50</span>, <span class="dv">100</span>), </span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>                        <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"0-20"</span>, <span class="st">"21-30"</span>, <span class="st">"31-40"</span>, <span class="st">"41-50"</span>, <span class="st">"50+"</span>)), </span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">FraudFoundP =</span> <span class="fu">factor</span>(FraudFoundP, </span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>                              <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), </span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>                              <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"not fraud"</span>, <span class="st">"fraud"</span>)))</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  gg_year_sex_age <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(df_year_sex_age, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">factor</span>(Year), <span class="at">fill =</span> Sex)) <span class="sc">+</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_bar</span>() <span class="sc">+</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">x =</span> <span class="st">"Year"</span>, </span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">y =</span> <span class="st">"Count"</span>, </span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>      <span class="at">fill =</span> <span class="st">"Sex"</span>,</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>      <span class="at">title =</span> <span class="st">"Counts of fraud and not fraud by year, sex, and age"</span>) <span class="sc">+</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">facet_grid</span>(FraudFoundP <span class="sc">~</span> AgeGroup, <span class="at">scales =</span> <span class="st">"free_y"</span>) <span class="sc">+</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_y_continuous</span>(<span class="at">expand =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>))</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>gg_year_sex_age</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="vehicle_fraud_detection_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Interpretation:</strong> Across both genders, claims that were found to be fraud or not, and all age groups (with the exception of between 1994 and 1995 for cases of fraud amongst 21-30 year-olds), numbers of claims decreased steadily from 1994 to 1996, the range of this dataset. Note that the <code>Sex</code> variable refers only to the gender of the policy holder, and therefore the proportion of gender is consistent across claims that were found to be fraud or not.</p>
+</section>
+<section id="conditional-on-age" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="conditional-on-age"><span class="header-section-number">2.2</span> Conditional on age</h2>
+<p>To look at the relationship between fraud and age more clearly, let’s visualize the probability of fraud given each age group:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># compute fraud rate (and 95% CI) given an age group</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>df_by_age <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(AgeOfPolicyHolder) <span class="sc">|&gt;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n =</span> <span class="fu">n</span>(),</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">frauds =</span> <span class="fu">sum</span>(FraudFoundP),</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">fraud_rate =</span> frauds <span class="sc">/</span> n,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># get SDs and CIs for the estimate of true population prop from this sample</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">se =</span> <span class="fu">sqrt</span>(fraud_rate <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> fraud_rate) <span class="sc">/</span> <span class="fu">pmax</span>(n, <span class="dv">1</span>)),</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">sd =</span> <span class="fu">sd</span>(fraud_rate),</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>         <span class="at">ci_low =</span> <span class="fu">pmax</span>(<span class="dv">0</span>, fraud_rate <span class="sc">-</span> <span class="fl">1.96</span> <span class="sc">*</span> se),</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">ci_high =</span> <span class="fu">pmin</span>(<span class="dv">1</span>, fraud_rate <span class="sc">+</span> <span class="fl">1.96</span> <span class="sc">*</span> se)</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>         ) <span class="sc">|&gt;</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(fraud_rate)) <span class="sc">|&gt;</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(fraud_rate, sd, ci_low, ci_high), <span class="sc">~</span> <span class="fu">round</span>(., <span class="dv">3</span>))) <span class="sc">|&gt;</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ci_interval =</span> <span class="fu">paste0</span>(<span class="st">"("</span>, ci_low, <span class="st">", "</span>, ci_high, <span class="st">")"</span> ))</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>gg_age <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(df_by_age, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(AgeOfPolicyHolder, fraud_rate), </span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>                                <span class="at">y =</span> fraud_rate)) <span class="sc">+</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">fill =</span> <span class="st">"skyblue"</span>) <span class="sc">+</span>                      </span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> ci_low, <span class="at">ymax =</span> ci_high), <span class="at">width =</span> <span class="fl">0.2</span>) <span class="sc">+</span></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> <span class="fu">percent_format</span>(<span class="at">accuracy =</span> <span class="dv">1</span>)) <span class="sc">+</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Age group"</span>, </span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Probability of fraud given age group </span><span class="sc">\n</span><span class="st">Pr(fraud | age group)"</span>, </span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Given an age group, how likely is a claim to be fraudulent?"</span>,</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"(Black bars tell us how sure we are about this estimate)"</span>)</span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>gg_age</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="vehicle_fraud_detection_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create a table that's easier to read for less technical audience</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>df_by_age_nice <span class="ot">&lt;-</span> df_by_age <span class="sc">|&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">percent_fraud =</span> fraud_rate<span class="sc">*</span><span class="dv">100</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">sd_nice =</span> sd<span class="sc">*</span><span class="dv">100</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">ci_low_nice =</span> ci_low<span class="sc">*</span><span class="dv">100</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">ci_high_nice =</span> ci_high<span class="sc">*</span><span class="dv">100</span>) <span class="sc">|&gt;</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ci_interval =</span> <span class="fu">paste0</span>(<span class="st">"("</span>, ci_low_nice, <span class="st">", "</span>, ci_high_nice, <span class="st">")"</span> )) <span class="sc">|&gt;</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(AgeOfPolicyHolder, n, frauds, percent_fraud, sd_nice, ci_interval) </span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(df_by_age_nice)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">AgeOfPolicyHolder</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">frauds</th>
+<th style="text-align: right;">percent_fraud</th>
+<th style="text-align: right;">sd_nice</th>
+<th style="text-align: left;">ci_interval</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">21 to 25</td>
+<td style="text-align: right;">108</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">14.8</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">(8.1, 21.5)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">18 to 20</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">13.3</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">(0, 30.5)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">31 to 35</td>
+<td style="text-align: right;">5593</td>
+<td style="text-align: right;">360</td>
+<td style="text-align: right;">6.4</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">(5.8, 7.1)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">over 65</td>
+<td style="text-align: right;">508</td>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">(3.9, 8)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">36 to 40</td>
+<td style="text-align: right;">4043</td>
+<td style="text-align: right;">237</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">(5.1, 6.6)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">26 to 30</td>
+<td style="text-align: right;">613</td>
+<td style="text-align: right;">33</td>
+<td style="text-align: right;">5.4</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">(3.6, 7.2)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">41 to 50</td>
+<td style="text-align: right;">2828</td>
+<td style="text-align: right;">144</td>
+<td style="text-align: right;">5.1</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">(4.3, 5.9)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">51 to 65</td>
+<td style="text-align: right;">1392</td>
+<td style="text-align: right;">70</td>
+<td style="text-align: right;">5.0</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">(3.9, 6.2)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The age groups of 18-20 and 21-25 year-olds have the highest proportion of fraudulent claims as compared to other age groups by a significant margin</p>
+<p>It’s important to also note the very wide 95% confidence interval, which is due to a sample size of <span class="math inline">\(n = 108\)</span>.</p>
+<p>However, even with the greater uncertainty around our estimate of the true proportion of fraudulent claims where the policyholder is 21-25 or 18-20 years old, it is still worth paying attention to these statistics. A sample size of 108 for 21-25 year-olds is small, but not insignificant, and there are reasons to believe that this age group may have higher rates of fraud when compared to older policyholders: younger adults (and teenagers) typically have less financial means than older individuals, and also may be more inclined to take the risk of making a fraudulent claim.</p>
+<p>With the exception of 26-30 year-olds, after 25 years old, the trend seems to decline as the age of policyholders increases, though it is worth noting that the differences are small.</p>
+</section>
+<section id="proportions-of-fraud-by-car-make" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="proportions-of-fraud-by-car-make"><span class="header-section-number">2.3</span> Proportions of fraud by car make</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># look at the proportion of fraud by each make of car</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>make_summary <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(Make) <span class="sc">|&gt;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">n =</span> <span class="fu">n</span>(),</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">frauds =</span> <span class="fu">sum</span>(FraudFoundP),</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">prop =</span> <span class="fu">mean</span>(FraudFoundP)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># get SDs and CIs for the estimate of true population prop from this sample</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">se =</span> <span class="fu">sqrt</span>(prop <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> prop) <span class="sc">/</span> <span class="fu">pmax</span>(n, <span class="dv">1</span>)),</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">sd =</span> <span class="fu">sd</span>(prop),</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">ci_low =</span> <span class="fu">pmax</span>(<span class="dv">0</span>, prop <span class="sc">-</span> <span class="fl">1.96</span> <span class="sc">*</span> se),</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>         <span class="at">ci_high =</span> <span class="fu">pmin</span>(<span class="dv">1</span>, prop <span class="sc">+</span> <span class="fl">1.96</span> <span class="sc">*</span> se)</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>         ) <span class="sc">|&gt;</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(prop)) <span class="sc">|&gt;</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>  <span class="co"># round decimals and make proportion a percentage for easier reading</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for non-technical audience, adjust SD and CI accordingly</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(prop, sd, ci_low, ci_high), <span class="sc">~</span> <span class="fu">round</span>(., <span class="dv">3</span>))) <span class="sc">|&gt;</span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">prop_percent =</span> prop<span class="sc">*</span><span class="dv">100</span>,</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>         <span class="at">sd =</span> sd<span class="sc">*</span><span class="dv">100</span>,</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>         <span class="at">ci_low =</span> ci_low<span class="sc">*</span><span class="dv">100</span>,</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>         <span class="at">ci_high =</span> ci_high<span class="sc">*</span><span class="dv">100</span>) <span class="sc">|&gt;</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ci_interval =</span> <span class="fu">paste0</span>(<span class="st">"("</span>, ci_low, <span class="st">", "</span>, ci_high, <span class="st">")"</span> )) <span class="sc">|&gt;</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(Make, n, frauds, prop_percent, sd, ci_interval)</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(make_summary)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Make</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">frauds</th>
+<th style="text-align: right;">prop_percent</th>
+<th style="text-align: right;">sd</th>
+<th style="text-align: left;">ci_interval</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Mercedes</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">25.0</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(0, 67.4)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Acura</td>
+<td style="text-align: right;">472</td>
+<td style="text-align: right;">59</td>
+<td style="text-align: right;">12.5</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(9.5, 15.5)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Saturn</td>
+<td style="text-align: right;">58</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">10.3</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(2.5, 18.2)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Saab</td>
+<td style="text-align: right;">108</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">10.2</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(4.5, 15.9)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ford</td>
+<td style="text-align: right;">450</td>
+<td style="text-align: right;">33</td>
+<td style="text-align: right;">7.3</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(4.9, 9.7)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mercury</td>
+<td style="text-align: right;">83</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">7.2</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(1.7, 12.8)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BMW</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6.7</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(0, 19.3)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Honda</td>
+<td style="text-align: right;">2482</td>
+<td style="text-align: right;">148</td>
+<td style="text-align: right;">6.0</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(5, 6.9)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Toyota</td>
+<td style="text-align: right;">3121</td>
+<td style="text-align: right;">186</td>
+<td style="text-align: right;">6.0</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(5.1, 6.8)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Chevrolet</td>
+<td style="text-align: right;">1681</td>
+<td style="text-align: right;">94</td>
+<td style="text-align: right;">5.6</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(4.5, 6.7)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Pontiac</td>
+<td style="text-align: right;">3837</td>
+<td style="text-align: right;">213</td>
+<td style="text-align: right;">5.6</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(4.8, 6.3)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mazda</td>
+<td style="text-align: right;">2354</td>
+<td style="text-align: right;">123</td>
+<td style="text-align: right;">5.2</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(4.3, 6.1)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Nissan</td>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3.3</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(0, 9.8)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">VW</td>
+<td style="text-align: right;">283</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">2.8</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(0.9, 4.8)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Dodge</td>
+<td style="text-align: right;">108</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1.9</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(0, 4.4)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Ferrari</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(0, 0)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Jaguar</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(0, 0)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Lexus</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(0, 0)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Porsche</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">5.9</td>
+<td style="text-align: left;">(0, 0)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>A handful of car makes have very low counts in this sample of claims: Mercedes, Ferrari, Jaguar, Lexus, Porsche. While Mercedes has the highest proportion of fraud per claim at 25%, since that proportion comes from only 4 total claims with 1 case of fraud, we cannot consider it a reliable estimate of the proportion of fraudulent claims in the greater population of Mercedes claims. Since the other makes have total claims less than 7, and 0 counts of fraud, this data also will create unhelpful noise in our analysis and for now, we will drop those too.</p>
+<p>BMW and Nissan are also relatively low compared to the top handful of makes. We will keep them in the dataset for now, but depending on the results of our model, may reevaluate later.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">#find and discard makes with n &gt; 6</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span>Make <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Mercedes"</span>, <span class="st">"Jaguar"</span>, <span class="st">"Lexus"</span>, <span class="st">"Porsche"</span>, <span class="st">"Ferrari"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="logistic-regression" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Logistic regression</h1>
+<p>Whether or not a claim is found to be fraudulent is binary outcome, so we’ll look at a logistic regression model. Based on the results of our exploratory analysis, it seems likely that age, sex, and year are likely to be significant predictors. We’ll also take a look at whether or not a police report was filed, whether or not a witness was present, and what type of base policy the claim was filed under.</p>
+<p>Our initial logistic regression model to predict whether a claim is fraudulent or not:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># run logistic regression model</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">glm</span>(FraudFoundP <span class="sc">~</span> Age <span class="sc">+</span> Sex <span class="sc">+</span> Year <span class="sc">+</span> PoliceReportFiled <span class="sc">+</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>               WitnessPresent <span class="sc">+</span> BasePolicy,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>             <span class="at">data =</span> df, <span class="at">family =</span> binomial)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>To create a visualization of the predictions from our model, we’ll adjust by sex to see a different curve for males and females. This is because from our exploratory data analysis, we saw that the overwhelming majority of claims (and fraudulent claims) came from male policyholders, so it’s possible we’ll see a significant difference in our analysis when we marginalize by sex.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot model with separate curves by sex</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>pred_age_sex <span class="ot">&lt;-</span> ggeffects<span class="sc">::</span><span class="fu">ggpredict</span>(model, <span class="at">terms =</span> <span class="fu">c</span>(<span class="st">"Age [all]"</span>, <span class="st">"Sex"</span>))</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(pred_age_sex, <span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> predicted, <span class="at">color =</span> group)) <span class="sc">+</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> conf.low, <span class="at">ymax =</span> conf.high, <span class="at">fill =</span> group), </span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">alpha =</span> <span class="fl">0.15</span>, </span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">color =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">percent_format</span>(<span class="at">accuracy =</span> <span class="fl">0.1</span>)) <span class="sc">+</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Age (years)"</span>, <span class="at">y =</span> <span class="st">"Predicted chance of fraud"</span>,</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">color =</span> <span class="st">"Sex"</span>, <span class="at">fill =</span> <span class="st">"Sex"</span>,</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Predicted chance of fraudulent claim vs age by sex"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="vehicle_fraud_detection_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Interpretation, further analysis, and results/recommendations (forthcoming shortly)</strong>:</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

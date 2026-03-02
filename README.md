@@ -1,6 +1,10 @@
-# Vehicle Detection Fraud
+# Vehicle Claims: Fraud Detection
 
-Personal project analyzing data on vehicle insurance claim fraud: <a href="https://liam-knight.github.io/vehicle_fraud_detection/">Project published here</a>
+<a href="https://liam-knight.github.io/vehicle_fraud_detection/">Project here</a>: personal project analyzing data on vehicle insurance claim fraud.
+
+## Motivation: 
+
+I’m interested in exploring and analyzing data related to detection of fraudulent insurance claims. I use this dataset to start working with data related to fraud in vehicle insurance claims: extracting insights, building an initial multivariate logistic regression model to predict the probability of a claim being fradulent. I’m going to build on this foundational work by learning machine learning techniques to deepen my analysis and build more sophisticated models for fraud prediction with actionable results that can be used to drive decision-making.
 
 ## Data:
 

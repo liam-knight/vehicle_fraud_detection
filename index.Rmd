@@ -1,0 +1,267 @@
+---
+title: "Vehicle Fraud Detection"
+author: "Liam Knight"
+format:
+  html:
+    toc: true
+    number-sections: true
+---
+
+**Motivation**: I'm interested in exploring and analyzing data related to detection of fraudulent insurance claims. I use this dataset to start working with data related to fraud in vehicle insurance claims: extracting insights, building an initial multivariate logistic regression model to predict the probability of a claim being fradulent. I'm going to build on this foundational work by learning machine learning techniques to deepen my analysis and build more sophisticated models for fraud prediction with actionable results that can be used to drive decision-making.
+
+# Descriptive analysis of dataset
+
+## Data collection
+
+```{r, include = FALSE}
+
+# load packages
+packages <- c('tidyverse', 'knitr', 'scales', 'ggeffects')
+lapply(packages, library, character.only=TRUE)
+```
+
+```{r}
+# read in data: fraud_oracle.csv from Kaggle, see README.md
+df <- read.csv("data/fraud_oracle.csv", 
+                header = TRUE,
+                stringsAsFactors = TRUE,
+                check.names = FALSE) 
+```
+
+## Data preprocessing
+
+```{r, results='hide'}
+# initial check for missing values: none found
+sum(sapply(df, function(x) sum(is.na(x))))
+```
+
+Though there are no missing values in this dataset, an initial visual review revealed a few errors and inconsistencies to fix: some misspellings/typos, inconsistency in variable naming conventions, and a meaningless variable `PolicyNumber`.
+
+**Data cleaning:**
+
+```{r}
+# clean up data
+df <- df |>
+  # fix typos and standardize variable name conventions
+  mutate(Make = recode(Make, 
+                       "Accura" = "Acura",
+                       "Mecedes" = "Mercedes",
+                       "Nisson" = "Nissan",
+                       "Porche" = "Porsche")) |>
+  rename(NumberOfSupplements = NumberOfSuppliments,
+         AddressChangeClaim = AddressChange_Claim,
+         DaysPolicyClaim = Days_Policy_Claim,
+         DaysPolicyAccident = Days_Policy_Accident,
+         FraudFoundP = FraudFound_P) |>
+  # PolicyNumber doesn't add any meaningful information, remove it
+  select(!PolicyNumber) 
+```
+
+**Data inspection:**
+
+```{r}
+# function to get descriptive info about each variable
+variable_info <- function(df) {
+  n_rows <- nrow(df)
+  tab <- tibble(
+    variable = names(df),
+    class = map_chr(df, ~ class(.x)),
+    n_unique = map_int(df, ~ n_distinct(.x)),
+    # run a custom function on each column to get character vector of 
+    # values for each column that appear in descending order of counts
+    values_descending = map_chr(df, ~ {
+      tab <- sort(table(as.character(.x)), decreasing = TRUE)
+      if (length(tab) == 0) return(NA_character_)
+      paste0(names(tab), collapse = ", ")
+    })
+  )
+  return(tab)
+}
+
+kable(variable_info(df))
+```
+
+**Dealing with odd values**
+
+Though we had already confirmed there are no missing values in this dataset, a few columns have some unexpected values of 0: `DayOfWeekClaimed`, `MonthClaimed`, `Age`. Note that as the variable `Age` refers to the age of the policyholder, 0 does not make sense as a value for any of these variables.
+
+```{r}
+# table that indicates how many times a value of 0 or "0" appears in each column
+tab_zeroes <- df |>
+  select(all_of(c("DayOfWeekClaimed", "MonthClaimed", "Age"))) |>
+  summarise(across(everything(), ~ sum(as.character(.) == "0"))) |>
+  pivot_longer(everything(), names_to = "variable", values_to = "count")
+
+kable(tab_zeroes)
+```
+
+Most of the values of 0 are in the `Age` column. When considering how to treat these values that are effectively missing values, unfortunately we are not able to speak to the data owner or source to understand where these values might have come from, which could help inform the decision about how to handle them. Additionally, there is no obvious reasonable method of imputation here. Thus, since 320 values comprise only 2.08% of the entire dataset of 15420 values and therefore a very small proportion, we will drop the rows that have these values of 0.
+
+```{r}
+df <- df |>
+  filter(!if_any(all_of(c("DayOfWeekClaimed", "MonthClaimed", "Age")), 
+                 ~ coalesce(as.character(.) == "0")))
+```
+
+Now we can perform some exploratory data analysis.
+
+# Exploratory Data Analysis (EDA)
+
+## Year, age, and sex
+
+```{r}
+# visualize distribution of sex and age for both cases of fraud and not fraud
+df_year_sex_age <- df |>
+  mutate(AgeGroup = cut(Age, 
+                        breaks = c(0, 20, 30, 40, 50, 100), 
+                        labels = c("0-20", "21-30", "31-40", "41-50", "50+")), 
+         FraudFoundP = factor(FraudFoundP, 
+                              levels = c(0, 1), 
+                              labels = c("not fraud", "fraud")))
+  gg_year_sex_age <- ggplot(df_year_sex_age, aes(x = factor(Year), fill = Sex)) +
+    geom_bar() +
+    labs(
+      x = "Year", 
+      y = "Count", 
+      fill = "Sex",
+      title = "Counts of fraud and not fraud by year, sex, and age") +
+    theme_minimal() +
+    facet_grid(FraudFoundP ~ AgeGroup, scales = "free_y") +
+    scale_y_continuous(expand = c(0, 0))
+
+gg_year_sex_age
+```
+**Interpretation:** Across both genders, claims that were found to be fraud or not, and all age groups (with the exception of between 1994 and 1995 for cases of fraud amongst 21-30 year-olds), numbers of claims decreased steadily from 1994 to 1996, the range of this dataset. Note that the `Sex` variable refers only to the gender of the policy holder, and therefore the proportion of gender is consistent across claims that were found to be fraud or not.
+
+## Conditional on age
+
+To look at the relationship between fraud and age more clearly, let's visualize the probability of fraud given each age group:
+
+```{r}
+# compute fraud rate (and 95% CI) given an age group
+df_by_age <- df |>
+  group_by(AgeOfPolicyHolder) |>
+  summarise(
+    n = n(),
+    frauds = sum(FraudFoundP),
+    fraud_rate = frauds / n,
+    .groups = "drop"
+    ) |>
+  # get SDs and CIs for the estimate of true population prop from this sample
+  mutate(se = sqrt(fraud_rate * (1 - fraud_rate) / pmax(n, 1)),
+         sd = sd(fraud_rate),
+         ci_low = pmax(0, fraud_rate - 1.96 * se),
+         ci_high = pmin(1, fraud_rate + 1.96 * se)
+         ) |>
+  ungroup() |>
+  arrange(desc(fraud_rate)) |>
+  mutate(across(c(fraud_rate, sd, ci_low, ci_high), ~ round(., 3))) |>
+  mutate(ci_interval = paste0("(", ci_low, ", ", ci_high, ")" ))
+
+gg_age <- ggplot(df_by_age, aes(x = reorder(AgeOfPolicyHolder, fraud_rate), 
+                                y = fraud_rate)) +
+  geom_col(fill = "skyblue") +                      
+  geom_errorbar(aes(ymin = ci_low, ymax = ci_high), width = 0.2) +
+  coord_flip() +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  labs(
+    x = "Age group", 
+    y = "Probability of fraud given age group \nPr(fraud | age group)", 
+    title = "Given an age group, how likely is a claim to be fraudulent?",
+    subtitle = "(Black bars tell us how sure we are about this estimate)")
+
+gg_age
+
+# create a table that's easier to read for less technical audience
+df_by_age_nice <- df_by_age |>
+  mutate(percent_fraud = fraud_rate*100,
+         sd_nice = sd*100,
+         ci_low_nice = ci_low*100,
+         ci_high_nice = ci_high*100) |>
+  mutate(ci_interval = paste0("(", ci_low_nice, ", ", ci_high_nice, ")" )) |>
+  select(AgeOfPolicyHolder, n, frauds, percent_fraud, sd_nice, ci_interval) 
+
+kable(df_by_age_nice)
+```
+The age groups of 18-20 and 21-25 year-olds have the highest proportion of fraudulent claims as compared to other age groups by a significant margin 
+
+It's important to also note the very wide 95% confidence interval, which is due to a sample size of $n = 108$.
+
+However, even with the greater uncertainty around our estimate of the true proportion of fraudulent claims where the policyholder is 21-25 or 18-20 years old, it is still worth paying attention to these statistics. A sample size of 108 for 21-25 year-olds is small, but not insignificant, and there are reasons to believe that this age group may have higher rates of fraud when compared to older policyholders: younger adults (and teenagers) typically have less financial means than older individuals, and also may be more inclined to take the risk of making a fraudulent claim.
+
+With the exception of 26-30 year-olds, after 25 years old, the trend seems to decline as the age of policyholders increases, though it is worth noting that the differences are small.
+
+
+## Proportions of fraud by car make
+
+```{r}
+# look at the proportion of fraud by each make of car
+make_summary <- df |>
+  group_by(Make) |>
+  summarize(
+    n = n(),
+    frauds = sum(FraudFoundP),
+    prop = mean(FraudFoundP)
+    ) |>
+  # get SDs and CIs for the estimate of true population prop from this sample
+  mutate(se = sqrt(prop * (1 - prop) / pmax(n, 1)),
+         sd = sd(prop),
+         ci_low = pmax(0, prop - 1.96 * se),
+         ci_high = pmin(1, prop + 1.96 * se)
+         ) |>
+  ungroup() |>
+  arrange(desc(prop)) |>
+  # round decimals and make proportion a percentage for easier reading
+  # for non-technical audience, adjust SD and CI accordingly
+  mutate(across(c(prop, sd, ci_low, ci_high), ~ round(., 3))) |>
+  mutate(prop_percent = prop*100,
+         sd = sd*100,
+         ci_low = ci_low*100,
+         ci_high = ci_high*100) |>
+  mutate(ci_interval = paste0("(", ci_low, ", ", ci_high, ")" )) |>
+  select(Make, n, frauds, prop_percent, sd, ci_interval)
+
+kable(make_summary)
+```
+A handful of car makes have very low counts in this sample of claims: Mercedes, Ferrari, Jaguar, Lexus, Porsche. While Mercedes has the highest proportion of fraud per claim at 25%, since that proportion comes from only 4 total claims with 1 case of fraud, we cannot consider it a reliable estimate of the proportion of fraudulent claims in the greater population of Mercedes claims. Since the other makes have total claims less than 7, and 0 counts of fraud, this data also will create unhelpful noise in our analysis and for now, we will drop those too.
+
+BMW and Nissan are also relatively low compared to the top handful of makes. We will keep them in the dataset for now, but depending on the results of our model, may reevaluate later.
+
+```{r}
+#find and discard makes with n > 6
+df <- df |>
+  filter(!Make %in% c("Mercedes", "Jaguar", "Lexus", "Porsche", "Ferrari"))
+```
+
+# Logistic regression
+
+Whether or not a claim is found to be fraudulent is binary outcome, so we'll look at a logistic regression model. Based on the results of our exploratory analysis, it seems likely that age, sex, and year are likely to be significant predictors. We'll also take a look at whether or not a police report was filed, whether or not a witness was present, and what type of base policy the claim was filed under.
+
+Our initial logistic regression model to predict whether a claim is fraudulent or not:
+
+```{r, results='hide'}
+# run logistic regression model
+model <- glm(FraudFoundP ~ Age + Sex + Year + PoliceReportFiled +
+               WitnessPresent + BasePolicy,
+             data = df, family = binomial)
+
+summary(model)
+```
+To create a visualization of the predictions from our model, we'll adjust by sex to see a different curve for males and females. This is because from our exploratory data analysis, we saw that the overwhelming majority of claims (and fraudulent claims) came from male policyholders, so it's possible we'll see a significant difference in our analysis when we marginalize by sex.
+
+```{r, warning = FALSE}
+# plot model with separate curves by sex
+pred_age_sex <- ggeffects::ggpredict(model, terms = c("Age [all]", "Sex"))
+
+ggplot(pred_age_sex, aes(x = x, y = predicted, color = group)) +
+  geom_line(size = 1) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = group), 
+              alpha = 0.15, 
+              color = NA) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 0.1)) +
+  labs(x = "Age (years)", y = "Predicted chance of fraud",
+       color = "Sex", fill = "Sex",
+       title = "Predicted chance of fraudulent claim vs age by sex")
+```
+
+**Interpretation, further analysis, and results/recommendations (forthcoming shortly)**:
